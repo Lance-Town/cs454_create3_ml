@@ -179,23 +179,31 @@ class Slash(Node):
         self.get_logger().warning('DOCKING')
 
 
-    def turn_distance(self):
+    def turn_distance(self, radians=1.5708, degree=None):
         """
-        Turns robot a random number of degrees
+        Turns robot a random number of radians
+
+        @param radians: radians to turn, defaults to 90 degree turn
+        @param degree: degree to turn, optional
         """
         # Freshly started, undock
-        # self.get_logger().warning('WAITING FOR SERVER')
+        self.get_logger().warning('WAITING FOR SERVER')
     # wait until the robot server is found and ready to receive a new goal
-        # self._undock_ac.wait_for_server()
-        # self.get_logger().warning('SERVER AVAILABLE')
+        self._rotate_ac.wait_for_server()
+        self.get_logger().warning('SERVER AVAILABLE')
         self.get_logger().warning('CREATING TURN GOAL')
 
     # create new Undock goal object to send to server
         rotate_goal = RotateAngle.Goal()
+        self.get_logger().warning('TURN GOAL CREATED')
         # rotate_goal.angle = 0.5 * math.pi
-        rotate_goal.angle = 3.0
+        rotate_goal.angle = radians
 
-        self._rotate_ac.send_goal(rotate_goal)
+        # use degrees if passed in
+        if degree != None:
+            rotate_goal.angle = math.radians(degree)
+
+        # self._rotate_ac.send_goal(rotate_goal)
         self.get_logger().warning('ROTATING')
 
         self.sendRotateGoal(rotate_goal)
@@ -219,6 +227,7 @@ def main():
 
     print("r: Start drive_away")
     print("d: Dock robot")
+    print("t: Turn robot 90 degrees")
     try:
         exec.spin() # execute slash callbacks until shutdown or destroy is called
     except KeyboardInterrupt:

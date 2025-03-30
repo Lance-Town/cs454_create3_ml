@@ -109,3 +109,6 @@ venv.bak/
 .idea/
 
 .vscode/
+
+# Scripts for building/sourcing project
+compile.sh

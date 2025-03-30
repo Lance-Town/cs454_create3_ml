@@ -109,20 +109,24 @@ class Slash(Node):
         """
         Sends a rotate goal asynchronously and 'blocks' until the goal is complete
         """
-        
+        self.get_logger().warning('DBG::sendRotateGoal::Start of Method')
         with lock:
-            drive_handle = self._rotate_ac.send_goal_async(goal)
-            while not drive_handle.done():
+            rotate_handle = self._rotate_ac.send_goal_async(goal)
+            while not rotate_handle.done():
+                self.get_logger().warning('DBG::sendRotateGoal::Rotate_handle not done')
                 pass # Wait for Action Server to accept goal
             
+            self.get_logger().warning('DBG::sendRotateGoal::Rotate_handle is DONE')
             # Hold ID in case we need to cancel it
-            self._goal_uuid = drive_handle.result() 
+            self._goal_uuid = rotate_handle.result() 
 
         while self._goal_uuid and self._goal_uuid.status == GoalStatus.STATUS_UNKNOWN:
+            self.get_logger().warning('DBG::sendRotateGoal::GoalStatus is UNKNOWN')
             pass # Wait until a Status has been assigned
 
         # After getting goalID, Loop while the goal is currently running
         while self._goal_uuid and self._goal_uuid.status is not GoalStatus.STATUS_SUCCEEDED:
+            self.get_logger().warning('DBG::sendRotateGoal::GoalStatus is NOT SUCCEEDED')
             if self._goal_uuid is None or self._goal_uuid.status is GoalStatus.STATUS_CANCELED :
                 break # If the goal was canceled, stop looping otherwise loop till finished
             pass
@@ -131,34 +135,41 @@ class Slash(Node):
         self._goal_uuid = None 
 #----------------------------------------------------------------------
 
-
-    def drive_away(self):
+    def undock_self(self):
         """
-        Undocks robot and drives out a meter asynchronously
+        Undocks robot
         """
-        # Freshly started, undock
         self.get_logger().warning('WAITING FOR SERVER')
-    # wait until the robot server is found and ready to receive a new goal
         self._undock_ac.wait_for_server()
         self.get_logger().warning('SERVER AVAILABLE')
         self.get_logger().warning('UNDOCKING')
 
-    # create new Undock goal object to send to server
         undock_goal = Undock.Goal()
 
         self._undock_ac.send_goal(undock_goal)
         self.get_logger().warning('UNDOCKED')
 
-    # wait for DriveDistance action server (blocking)
+        return
+
+    def drive_away(self, dist=1.0):
+        """
+        Drives robot forward a set distance
+
+        @param dist: distance in meters for robot to move
+        """
+        # wait for DriveDistance action server (blocking)
+        self.get_logger().warning('WAITING FOR SERVER')
         self._drive_ac.wait_for_server()
-        self.get_logger().warning('DRIVING!')
+        self.get_logger().warning('SERVER AVAILABLE')
+        self.get_logger().warning(f'CREATING DRIVE GOAL')
 
-    # create goal object and specify distance to drive
+        # create goal object and specify distance to drive
         drive_goal = DriveDistance.Goal()
-        drive_goal.distance = 1.0 # TESTING ONLY
-        # drive_goal.distance = random.uniform(1, 4) # USE IN EXAMPLE, 1.0 IS FOR TESTING
+        drive_goal.distance = dist 
+        self.get_logger().warning(f'DRIVE GOAL MADE')
 
-    # send goal to async function
+        self.get_logger().warning(f'DRIVING {dist:.3f} METERS')
+        # send goal to async function
         self.sendDriveGoal(drive_goal)
 
     def dock_self(self):
@@ -203,7 +214,6 @@ class Slash(Node):
         if degree != None:
             rotate_goal.angle = math.radians(degree)
 
-        # self._rotate_ac.send_goal(rotate_goal)
         self.get_logger().warning('ROTATING')
 
         self.sendRotateGoal(rotate_goal)
@@ -223,8 +233,10 @@ def main():
         (KeyCode(char='r'), s.drive_away),
         (KeyCode(char='d'), s.dock_self),
         (KeyCode(char='t'), s.turn_distance),
+        (KeyCode(char='u'), s.undock_self),
         ])
 
+    print("u: Undock robot")
     print("r: Start drive_away")
     print("d: Dock robot")
     print("t: Turn robot 90 degrees")

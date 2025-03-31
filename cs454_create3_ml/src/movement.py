@@ -218,6 +218,40 @@ class Slash(Node):
 
         self.sendRotateGoal(rotate_goal)
 
+    def test_path(self):
+        """
+        Test path for the manufacturing line
+
+        TODO: Remove to its own python package, but this will work for now
+        """
+
+        # undock
+        self.undock_self()
+
+        # Drive 2 meters out
+        self.drive_away(dist=2.0)
+        
+        # turn 90 degrees
+        self.turn_distance()
+
+        # move .75 meters 
+        self.drive_away(dist=0.75)
+
+        # In position to send action client to Robot2 to pick up the dice.
+        # This would end this initial action, and now it should be waiting for Robot 2 to send it an action
+        # to move to Robot 5s position.
+
+        # the rest is temporary code to just go and dock itself
+        self.turn_distance(degree=180.0)
+
+        self.drive_away(0.75)
+
+        self.turn_distance(degree=-90.0)
+
+        self.drive_away(dist=1.5)
+
+        self.dock_self()
+
 
 def main():
     rclpy.init()
@@ -234,12 +268,14 @@ def main():
         (KeyCode(char='d'), s.dock_self),
         (KeyCode(char='t'), s.turn_distance),
         (KeyCode(char='u'), s.undock_self),
+        (KeyCode(char='p'), s.test_path),
         ])
 
     print("u: Undock robot")
     print("r: Start drive_away")
     print("d: Dock robot")
     print("t: Turn robot 90 degrees")
+    print("p: Run Test Path")
     try:
         exec.spin() # execute slash callbacks until shutdown or destroy is called
     except KeyboardInterrupt:
